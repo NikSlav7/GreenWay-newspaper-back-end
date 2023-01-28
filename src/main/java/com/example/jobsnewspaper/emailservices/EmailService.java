@@ -24,6 +24,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 @Component
@@ -69,6 +70,13 @@ public class EmailService {
     @PostMapping(path = "email/remove")
     public void deleteEmailMessage(@RequestBody EmailMessageWithStringInterests emailMessage) throws WrongEmailDetailsException {
         emailMessagesDao.removeMessage(new EmailMessage().fromMessageWithStringInterests(emailMessage));
+    }
+
+    @PostMapping(path = "/email/send-test-email")
+    public void sendTestEmail(@RequestBody TestEmailSendRequest request) throws InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
+        sendEmailsToEverybody(request.getMessage().getMessageHeader(),
+                request.getEmails().stream().map(email -> new EmailNewspaperFollower(email)).collect(Collectors.toList()),
+                request.getMessage());
     }
 
     @GetMapping(path = "email/get-status")

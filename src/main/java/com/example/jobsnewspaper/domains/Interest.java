@@ -32,6 +32,7 @@ public enum Interest {
     }
 
     public static String interestToString(Interest interest){
+        if (interest == null) return null;
         return interest.interestName;
     }
 
@@ -52,6 +53,15 @@ public enum Interest {
             interestStringMap.put(interest, entry.getValue());
         }
         return interestStringMap;
+    }
+
+    public static Map<String, String> stringMapFromInterestMap(Map<Interest, String> map){
+        Map<String, String> stringMap = new HashMap<>();
+
+        for (Map.Entry<Interest, String> entry : map.entrySet()){
+            stringMap.put(interestToString(entry.getKey()), entry.getValue());
+        }
+        return stringMap;
     }
 
 }

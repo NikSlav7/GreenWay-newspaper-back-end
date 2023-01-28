@@ -47,7 +47,7 @@ public class WebConfig {
                 .addFilter(new AuthFilter(authenticationManager))
                 .addFilterBefore(new JwtFilter(authenticationManager), AuthFilter.class)
                 .authorizeHttpRequests()
-                .requestMatchers("/api/register", "/api/check-if-registered", "/api/interest/get-all").permitAll()
+                .requestMatchers("/api/register", "/api/check-if-registered", "/api/interest/get-all", "/api/unfollow").permitAll()
                 .anyRequest()
                 .authenticated()
                 .and()

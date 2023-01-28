@@ -4,6 +4,7 @@ package com.example.jobsnewspaper.daos;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBQueryExpression;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBScanExpression;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Table;
 import com.amazonaws.services.dynamodbv2.model.*;
@@ -110,10 +111,11 @@ public class EmailMessagesDao {
                 .withExpressionAttributeNames(expressionAttributeNames);
 
         List<EmailMessage> emailMessages = dynamoDBMapper.query(EmailMessage.class, queryRequest);
-
         if (emailMessages.size() == 0) throw new WrongEmailDetailsException("Email with such details doesn't exist");
         return emailMessages.get(0);
     }
+
+
 
 
 

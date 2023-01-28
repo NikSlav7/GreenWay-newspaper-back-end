@@ -38,4 +38,9 @@ public class RegistrationManager {
     public Boolean isRegistered(@RequestParam String email){
         return emailNewspaperFollowersDAO.checkIfEmailAlreadyRegistered(email);
     }
+
+    @PostMapping(path = "unfollow")
+    public void unfollow(@RequestBody String email){
+        emailNewspaperFollowersDAO.removeEmailNewspaperFollower(email);
+    }
 }

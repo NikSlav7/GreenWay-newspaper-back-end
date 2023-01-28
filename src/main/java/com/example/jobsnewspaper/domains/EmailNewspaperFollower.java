@@ -32,12 +32,18 @@ public class EmailNewspaperFollower{
     public EmailNewspaperFollower(String followerEmail, List<Interest> interests) {
         this.followerEmail = followerEmail;
         this.interests = interests;
-
     }
+
+    public EmailNewspaperFollower(String followerEmail){
+        this.followerEmail = followerEmail;
+    }
+
 
     public EmailNewspaperFollower emailNewspaperFollowerFromRegistrationRequest(RegistrationRequest request){
         return new EmailNewspaperFollower(request.getEmail(), request.getAllInterest());
     }
+
+
 
 
 
