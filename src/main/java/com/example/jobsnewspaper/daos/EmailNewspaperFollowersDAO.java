@@ -14,6 +14,7 @@ import com.example.jobsnewspaper.amazon.AmazonData;
 import com.example.jobsnewspaper.domains.EmailMessage;
 import com.example.jobsnewspaper.domains.EmailMessageWithStringInterests;
 import com.example.jobsnewspaper.domains.EmailNewspaperFollower;
+import com.example.jobsnewspaper.domains.Interest;
 import com.example.jobsnewspaper.exceptions.NoFollowersFoundException;
 import com.example.jobsnewspaper.repositories.EmailNewspaperFollowersRepo;
 import com.example.jobsnewspaper.repositories.FollowersRepo;
@@ -59,6 +60,11 @@ public class EmailNewspaperFollowersDAO {
 
         amazonDynamoDB.deleteItem(deleteItemRequest);
     }
+
+    public void updateEmailNewspaperFollower(EmailNewspaperFollower oldFollower, EmailNewspaperFollower newFollower){
+        removeEmailNewspaperFollower(oldFollower.getFollowerEmail());
+        saveEmailNewspaperFollower(newFollower);
+    }
     public EmailNewspaperFollower getFollower(String followerEmail) throws NoFollowersFoundException {
         Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
         expressionAttributeValues.put(":followerEmail", new AttributeValue().withS(String.valueOf(followerEmail)));
@@ -71,16 +77,27 @@ public class EmailNewspaperFollowersDAO {
 
         return emailFollowers.get(0);
     }
-    public List<EmailNewspaperFollower> getFollowers(String emailPrefix) throws NoFollowersFoundException {
+    public List<EmailNewspaperFollower> getFollowers(String emailPrefix, List<Interest> interests) throws NoFollowersFoundException {
 
         Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
         expressionAttributeValues.put(":prefix", new AttributeValue().withS(emailPrefix));
+
+        StringBuilder filterExpression = new StringBuilder("begins_with(followerEmail, :prefix)");
+        for (int i = 0; i < interests.size(); i++){
+            if (i == 0) filterExpression.append(" AND (");
+            else filterExpression.append(" OR ");
+
+            expressionAttributeValues.put(":interest" + i, new AttributeValue().withS(interests.get(0).name()));
+            filterExpression.append("contains(interests, :interest" + i + ")");
+
+            if (i == interests.size() - 1) filterExpression.append(")");
+        }
 
         Map<String, String> attributeNames = new HashMap<>();
         attributeNames.put("#followerEmail", "followerEmail");
         DynamoDBScanExpression scanExpression = new DynamoDBScanExpression()
                 .withExpressionAttributeValues(expressionAttributeValues)
-                .withFilterExpression("begins_with(followerEmail, :prefix)");
+                .withFilterExpression(filterExpression.toString());
         scanExpression.setLimit(10);
 
         List<EmailNewspaperFollower> emailNewspaperFollowers = dynamoDBMapper.scan(EmailNewspaperFollower.class, scanExpression);

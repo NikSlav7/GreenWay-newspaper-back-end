@@ -4,22 +4,17 @@ package com.example.jobsnewspaper.daos;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBQueryExpression;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBScanExpression;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Table;
 import com.amazonaws.services.dynamodbv2.model.*;
-import com.example.jobsnewspaper.amazon.AmazonData;
 import com.example.jobsnewspaper.converters.TimestampConverter;
 import com.example.jobsnewspaper.domains.EmailMessage;
 import com.example.jobsnewspaper.domains.MessageStatus;
 import com.example.jobsnewspaper.emailservices.EmailSender;
-import com.example.jobsnewspaper.emailservices.EmailService;
 import com.example.jobsnewspaper.exceptions.WrongEmailDetailsException;
 import com.example.jobsnewspaper.time.TimeManager;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.config.ScheduledTaskRegistrar;
 import org.springframework.stereotype.Repository;
-import org.w3c.dom.Attr;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -70,6 +65,19 @@ public class EmailMessagesDao {
         request.withExpressionAttributeValues(attributeValues);
         request.withKeyConditionExpression("messageStatus = :statusToGet AND whenToSend BETWEEN :currentTimeBottomInterval AND :currentTimeTopInterval");
         request.withLimit(5);
+        List<EmailMessage> messages = dynamoDBMapper.query(EmailMessage.class, request);
+
+        return messages;
+    }
+
+    public List<EmailMessage> getSendingMessages(){
+        Map<String, AttributeValue> attributeValues = new HashMap<>();
+        attributeValues.put(":statusToGet", new AttributeValue().withN(String.valueOf(MessageStatus.SENDING.getInd())));
+        DynamoDBQueryExpression<EmailMessage> request = new DynamoDBQueryExpression<EmailMessage>();
+        request.withExpressionAttributeValues(attributeValues);
+        request.withKeyConditionExpression("messageStatus = :statusToGet");
+        request.withLimit(15);
+
         List<EmailMessage> messages = dynamoDBMapper.query(EmailMessage.class, request);
 
         return messages;

@@ -39,6 +39,7 @@ public class EmailService {
     @Value("${spring.mail.password}")
     private String sendingPassword;
 
+
     private final String host = "localhost";
 
 
@@ -56,25 +57,35 @@ public class EmailService {
     }
 
     @GetMapping(path = "email/get-emails")
-    public List<EmailMessage> getEmailMessages(@RequestParam(name = "isSent")boolean isSent, @RequestParam String date, @RequestParam int daysOffset) throws ParseException {
+    public List<EmailMessage> getEmailMessages(@RequestParam(name = "isSent")boolean isSent, @RequestParam boolean isSending,  @RequestParam String date, @RequestParam int daysOffset) throws ParseException {
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm");
         LocalDateTime instant = LocalDateTime.ofInstant(simpleDateFormat.parse(date).toInstant(), ZoneId.of("Europe/Tallinn"));
         MessageStatus status = isSent ? MessageStatus.SENT : MessageStatus.NOT_SENT;
-        List<EmailMessage> messages = emailMessagesDao.getDayMessages(instant.atZone(ZoneId.of("Europe/Tallinn")).toInstant().toEpochMilli(), daysOffset, status.getInd());
+        if (isSending) status = MessageStatus.SENDING;
+
+
+        List<EmailMessage> messages;
+
+        if (!isSending) messages = emailMessagesDao.getDayMessages(instant.atZone(ZoneId.of("Europe/Tallinn")).toInstant().toEpochMilli(), daysOffset, status.getInd());
+        else messages = emailMessagesDao.getSendingMessages();
+
         List<EmailMessage> modifiableMessages = new ArrayList<>(messages);
         new Sorter().sortEmailMessagesByDate(modifiableMessages);
         if (isSent) Collections.reverse(modifiableMessages);
         return modifiableMessages;
     }
 
+
+
     @PostMapping(path = "email/remove")
     public void deleteEmailMessage(@RequestBody EmailMessageWithStringInterests emailMessage) throws WrongEmailDetailsException {
         emailMessagesDao.removeMessage(new EmailMessage().fromMessageWithStringInterests(emailMessage));
     }
 
+
     @PostMapping(path = "/email/send-test-email")
-    public void sendTestEmail(@RequestBody TestEmailSendRequest request) throws InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
-        sendEmailsToEverybody(request.getMessage().getMessageHeader(),
+    public void sendTestEmail(@RequestBody TestEmailSendRequest request) throws InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException, WrongEmailDetailsException {
+        sendTestEmails(request.getMessage().getHeader(),
                 request.getEmails().stream().map(email -> new EmailNewspaperFollower(email)).collect(Collectors.toList()),
                 request.getMessage());
     }
@@ -140,6 +151,8 @@ public class EmailService {
         EmailTemplates templates = new EmailTemplates();
         for (EmailNewspaperFollower follower : followers){
             Template template = templates.getRandomTemplate();
+            template.setTemplateHeader(messageToSend.getMessageHeader());
+            template.setTemplateSubHeader(messageToSend.getMessageSubHeader());
             List<Interest> interests = follower.getInterests();
             for(int i = 0; i < 3; i++){
                 InsideContent content = interests.size() <= i || interests.get(i) == null ? null :
@@ -152,6 +165,24 @@ public class EmailService {
 
         }
         emailMessagesDao.changeEmailStatus(messageToSend, MessageStatus.SENT);
+    }
+
+    public void sendTestEmails(String subject, List<EmailNewspaperFollower> followers, TestMessage messageToSend) throws InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException, WrongEmailDetailsException {
+        Map<Interest, String> interestStringMap = Interest.interestMapFromStringMap(messageToSend.getInterests());
+        EmailTemplates templates = new EmailTemplates();
+        for (EmailNewspaperFollower follower : followers){
+            Template template = templates.getRandomTemplate();
+            Interest interests[] = Interest.values();
+            for(int i = 0; i < interests.length; i++){
+                InsideContent content = interests[i] == null ? null :
+                        new InsideContentN1().insertHeaderAndText(interests[i].getInterestName(), interestStringMap.get(interests[i]));
+                template.insertInsideContent(i, content);
+                template.setTemplateHeader(messageToSend.getHeader());
+                template.setTemplateSubHeader(messageToSend.getSubheader());
+            }
+            sendMultipleMailMessages(subject, template.getTemplateContent(), List.of(follower));
+
+        }
     }
 
 

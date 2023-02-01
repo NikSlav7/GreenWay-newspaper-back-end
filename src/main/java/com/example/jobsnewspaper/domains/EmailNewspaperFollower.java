@@ -1,6 +1,7 @@
 package com.example.jobsnewspaper.domains;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBAttribute;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBHashKey;
@@ -41,6 +42,15 @@ public class EmailNewspaperFollower{
 
     public EmailNewspaperFollower emailNewspaperFollowerFromRegistrationRequest(RegistrationRequest request){
         return new EmailNewspaperFollower(request.getEmail(), request.getAllInterest());
+    }
+
+
+    public EmailNewspaperFollower
+    fromEmailNewspaperFollowerWithStringInterest(EmailNewspaperFollowerWithStringInterests emailNewspaperFollowerWithStringInterests){
+        this.followerEmail = emailNewspaperFollowerWithStringInterests.getFollowerEmail();
+        this.interests = emailNewspaperFollowerWithStringInterests.getInterests().stream().
+                map(interest -> Interest.interestFromString(interest)).collect(Collectors.toList());
+        return this;
     }
 
 
