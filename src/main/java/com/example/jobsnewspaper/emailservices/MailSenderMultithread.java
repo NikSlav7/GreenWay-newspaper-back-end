@@ -15,9 +15,9 @@ import java.util.Properties;
 public class MailSenderMultithread implements Runnable{
 
     @Value("${spring.mail.username}")
-    private String sendingEmail = "nikslav07@zohomail.eu";
+    private String sendingEmail = ""
 
-    private String password = "Kolbasa1289";
+    private String password = "";
 
     private JavaMailSender javaMailSender;
 
